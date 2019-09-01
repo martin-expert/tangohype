@@ -1,0 +1,267 @@
+{% if section.settings.show_related_products %}
+
+{% assign thumbnail_cropping = section.settings.thumbnail_cropping %}
+{% assign article_tags = article.tags %}
+
+{% assign count = 0 %}
+{% assign product_1 = '' %}
+{% assign product_2 = '' %}
+
+{% if section.settings.priority_collection_1 and section.settings.priority_collection_1 != empty %}
+  {% for product in collections[section.settings.priority_collection_1].products %}
+
+    {% assign product_tags = product.tags | downcase %}
+    {% for tag in article_tags %}
+      {% assign tag_lowercase = tag | downcase %}
+      {% if product_tags contains tag_lowercase %}
+        {% if count == 0 %}
+          {% assign product_1 = product %}
+        {% endif %}
+        {% if count == 1 %}
+          {% assign product_2 = product %}
+        {% endif %}
+        {% assign count = count | plus: 1 %}
+        {% break %}
+      {% endif %}
+    {% endfor %}
+
+    {% if count == 2 %}
+      {% break %}
+    {% endif %}
+
+  {% endfor %}
+{% endif %}
+
+{% if section.settings.priority_collection_2 and section.settings.priority_collection_2 != empty %}
+  {% for product in collections[section.settings.priority_collection_1].products %}
+
+    {% assign product_tags = product.tags | downcase %}
+    {% for tag in article_tags %}
+      {% assign tag_lowercase = tag | downcase %}
+      {% if product_tags contains tag_lowercase %}
+        {% if count == 0 %}
+          {% assign product_1 = product %}
+        {% endif %}
+        {% if count == 1 %}
+          {% assign product_2 = product %}
+        {% endif %}
+        {% assign count = count | plus: 1 %}
+        {% break %}
+      {% endif %}
+    {% endfor %}
+
+    {% if count == 2 %}
+      {% break %}
+    {% endif %}
+
+  {% endfor %}
+{% endif %}
+
+
+{% for product in collections.all.products %}
+
+  {% assign product_tags = product.tags | downcase %}
+  {% for tag in article_tags %}
+    {% assign tag_lowercase = tag | downcase %}
+    {% if product_tags contains tag_lowercase %}
+      {% if count == 0 %}
+        {% assign product_1 = product %}
+      {% endif %}
+      {% if count == 1 %}
+        {% assign product_2 = product %}
+      {% endif %}
+
+
+      {% assign count = count | plus: 1 %}
+      {% break %}
+    {% endif %}
+  {% endfor %}
+
+  {% if count == 2 %}
+    {% break %}
+  {% endif %}
+
+{% endfor %}
+
+
+{% if count > 0  %}
+
+<section class="section bg--section m0 py4">
+  <div class="wrapper section--wrapper">
+
+    <h2 class="t--section-title text-align--center f--main font-size--l lg--font-size--xl m0 mb3">{{ section.settings.related_products_heading }}</h2>
+
+    {% if count == 1  %}
+      {% assign product = product_1 %}
+      {% capture selectID %}select-{{ product.handle }}{% endcapture %}
+      {% capture sectionID %}section-{{ product.handle }}{% endcapture %}
+      {% capture single_product_id %}section-{{ section.id }}-{{ product.handle }}{% endcapture %}
+      {% assign current_variant = product.selected_or_first_available_variant %}
+      {% assign show_quantity = section.settings.show_quantity %}
+      {% assign in_list = true %}
+
+      {% if section.settings.show_description_related  %}
+        {% assign paragraphs = product.description | split: '<p>' %}
+        {% assign short_description = paragraphs[1] | replace: '</p>', '' %}
+      {% endif %}
+
+      {% if section.settings.product_image_size == 'large' %}
+        {% assign product_image_class = 'lg--one-half dt--seven-twelfths' %}
+        {% assign product_desc_class = 'lg--one-half dt--five-twelfths' %}
+      {% else %}
+        {% assign product_image_class = 'lg--one-half dt--one-half' %}
+        {% assign product_desc_class = 'lg--one-half dt--one-half' %}
+      {% endif %}
+
+
+      {% comment %}
+        Check if the product is on sale and set a variable to be used below.
+      {% endcomment %}
+      {% assign on_sale = false %}
+      {% if product.compare_at_price > product.price %}
+        {% assign on_sale = true %}
+      {% endif %}
+
+      <div itemscope itemtype="http://schema.org/Product" class="grid section-product single-product py2 clearfix" id="{{ sectionID }}" data-section-id="{{ single_product_id }}" data-money-format="{{ shop.money_format }}">
+        <div class="grid__item">
+          <div class="grid product-single">
+            <div class="grid__item {{ product_image_class }}  text-center relative">
+              <div class="lg--mb0 product-single__imageHolder relative clearfix">
+                {% if on_sale %}
+                  <div class="product__on-sale color--white bg--shop-accent f--main font-size--xs lg--font-size--s">{{ 'products.product.on_sale' | t }}</div>
+                {% endif %}
+
+                {%- assign current_variant = product.selected_or_first_available_variant -%}
+                {%- assign featured_img = current_variant.featured_image | default: product.featured_image -%}
+
+                {% unless featured_img == blank %}
+                  {% capture img_id %}ProductImage-{{ featured_img.id }}{% endcapture %}
+                  {% capture wrapper_id %}ProductImageWrapper-{{ featured_img.id }}{% endcapture %}
+                  {%- assign img_url = featured_img | img_url: '1x1' | replace: '_1x1.', '_{width}x.' -%}
+                  <div id="{{ wrapper_id }}" class="resp-img-wrapper js">
+                    <div style="padding-top:{{ 1 | divided_by: featured_img.aspect_ratio | times: 100}}%;">
+                      <img id="{{ img_id }}"
+                            class="resp-img product__img lazyload"
+                            data-src="{{ img_url }}"
+                            data-widths="[180, 360, 470, 600, 750, 940, 1080, 1296, 1512, 1728, 2048]"
+                            data-aspectratio="{{ featured_img.aspect_ratio }}"
+                            data-sizes="auto"
+                            alt="{{ featured_img.alt | escape }}">
+                    </div>
+                  </div>
+                  <noscript>
+                  {% include 'hs-image-utils' with image: featured_img.src %}<img alt="{{ featured_img.alt | escape }}" class="product__img lazyload hs-id-e8c36955 hs-lazyload" data-aspectratio="{{ hs_aspect_ratio }}" data-parent-fit="contain" data-sizes="auto" data-src="{{ hs_data_src }}" data-widths="{{ hs_data_widths }}" src="{{ featured_img.src | img_url: 'large' }}" srcset="data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==" style=";max-width: 100%;min-width: 80%;"/>
+                </noscript>
+                {% endunless %}
+              </div>
+            </div><!-- end product images -->
+
+            <div class="grid__item {{ product_desc_class }} text-align--center pt2 lg--pt1 dt--pt4">
+
+              <div class="mx--auto lg--four-fifths dt--three-fifths">
+                {% include 'product-page-form' %}
+              </div>
+
+            </div><!-- end product form -->
+
+          </div><!-- end images and form grid -->
+
+
+          <script type="application/json" id="ProductJson-{{ single_product_id }}">
+            {{ product | json }}
+          </script>
+
+          <script type="application/json" id="FirstVariant-{{ single_product_id }}">
+            {{ product.selected_or_first_available_variant | json }}
+          </script>
+
+        </div>
+
+      </div>
+    {% else %}
+
+      <div class="grid-uniform product-grid">
+        <div class="product-grid__inner clearfix">
+          {% assign product = product_1 %}
+          {% assign grid_item_width = 'one-whole lg--one-half mt4' %}
+          {% include 'product-grid-item', large: true %}
+
+          {% assign product = product_2 %}
+          {% assign grid_item_width = 'one-whole lg--one-half mt4' %}
+          {% include  'product-grid-item', large: true %}
+        </div>
+      </div>
+
+    {% endif %}
+
+  </div>
+</section>
+{% endif %}
+{% endif %}
+{% schema %}
+  {
+    "name": "Related products",
+    "class": "section-article-related-products",
+    "settings": [
+      {
+        "type": "checkbox",
+        "id": "show_related_products",
+        "label": "Enable related products",
+        "info":   "Show products that share the same tag as the article."
+      },
+      {
+          "type":      "text",
+          "id":        "related_products_heading",
+          "label":     "Title",
+          "info":      "Title for related products section",
+          "default":   "Related Products"
+      },
+      {
+        "type": "select",
+        "id": "product_image_size",
+        "label": "Product image size - desktop",
+        "options": [
+          {
+            "value": "medium",
+            "label": "Medium"
+          },
+          {
+            "value": "large",
+            "label": "Large"
+          }
+        ],
+        "default": "large"
+      },
+      {
+        "type": "checkbox",
+        "id": "show_description_related",
+        "label": "Show excerpt on related products",
+        "info":   "Shown if there is only 1 related product"
+      },
+      {
+        "type": "checkbox",
+        "id": "show_quantity",
+        "label": "Show quantity on related products",
+        "info":   "Shown if there is only 1 related product"
+      },
+      {
+        "type":    "header",
+        "content": "Priority Collections"
+      },
+      {
+        "type":    "paragraph",
+        "content": "If you have over 50 products, search these collections for related products first."
+      },
+      {
+        "type":      "collection",
+        "id":        "priority_collection_1",
+        "label":     "Collection 1"
+      },
+      {
+        "type":      "collection",
+        "id":        "priority_collection_2",
+        "label":     "Collection 2"
+      }
+    ]
+  }
+{% endschema %}

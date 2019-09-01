@@ -1,0 +1,239 @@
+<!-- /templates/cart.liquid -->
+{% include 'global-variables' %}
+{% comment %}
+
+  For info on test orders:
+    - General http://docs.shopify.com/manual/your-store/orders/test-orders
+    - Shopify Payments - http://docs.shopify.com/manual/more/shopify-payments/testing-shopify-payments
+
+{% endcomment %}
+
+{% if cart.item_count > 0 %}
+
+<section class="section bg--section m0 py3 f--main">
+  <div class="wrapper section--wrapper">
+
+
+    <h1 class="t--section-title text-align--center f--main font-size--l lg--font-size--xl m0 py3">{{ 'cart.general.title' | t }}</h1>
+
+
+    <form action="/cart" method="post" novalidate class="cart table-wrap">
+      
+      <div class="cart-table eight-twelfths float-left table--responsive">
+        <button type="submit" name="checkout" class="btn bg--shop-accent color--shop-accent-overlay add_to_cart mobile_only">{{ 'cart.general.checkout' | t }}</button>
+          {% for item in cart.items %}
+          <div class="one-whole clear-both">  
+        	<div class="three-tenths float-left">
+              <a href="{{ item.url | within: collections.all }}" class="cart__image">
+                {% comment %}
+                  More image size options at:
+                    - http://docs.shopify.com/themes/filters/product-img-url
+                {% endcomment %}
+                {% include 'hs-image-utils' with image: item %}<img alt="{{ item.title | escape }}" class="hs-lazyload hs-id-ef9e9430 lazyload" data-aspectratio="{{ hs_aspect_ratio }}" data-parent-fit="contain" data-sizes="auto" data-src="{{ hs_data_src }}" data-widths="{{ hs_data_widths }}" src="{{ item | img_url: 'medium' }}" srcset="data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==" style=";max-width: 100%;min-width: 80%;"/>
+              </a>
+        	</div>
+        	
+        	<div class="seven-tenths float-left">
+            <div class="left-10">
+              <h3>
+                <a href="{{ item.url }}" class="product-grid-title f--title font-size--xl">
+                {{ item.product.title }}
+              </a>
+              </h3>
+
+              {% unless item.variant.title contains 'Default' %}
+                
+              <p class="secondary">{{ item.product.options }}: <strong>{{ item.variant.title }}</strong></p>
+              {% endunless %}
+
+              {% if settings.cart_vendor_enable %}
+                <p class="secondary">{{ item.vendor }}</p>
+              {% endif %}
+
+              {% comment %}
+                Optional, loop through custom product line items if available
+
+                For more info on line item properties, visit:
+                  - http://docs.shopify.com/support/your-store/products/how-do-I-collect-additional-information-on-the-product-page-Like-for-a-monogram-engraving-or-customization
+              {% endcomment %}
+              {% assign property_size = item.properties | size %}
+              {% if property_size > 0 %}
+                {% for p in item.properties %}
+                  {% unless p.last == blank %}
+                    {{ p.first }}:
+
+                    {% comment %}
+                      Check if there was an uploaded file associated
+                    {% endcomment %}
+                    {% if p.last contains '/uploads/' %}
+                      <a href="{{ p.last }}">{{ p.last | split: '/' | last }}</a>
+                    {% else %}
+                      {{ p.last }}
+                    {% endif %}
+
+                    <br>
+                  {% endunless %}
+                {% endfor %}
+              {% endif %}
+
+              {%- if item.line_level_discount_allocations != blank -%}
+                <ul class="m0 p0 mt1 list--reset font-size--s text-align--left color--shop-accent order-discount" aria-label="{{ 'customer.order.discount' | t }}">
+                  {%- for discount_allocation in item.line_level_discount_allocations -%}
+                    <li class="m0 order-discount__item">
+                      {{ discount_allocation.discount_application.title }} (-{{ discount_allocation.amount | money }})
+                    </li>
+                  {%- endfor -%}
+                </ul>
+              {%- endif -%}
+
+              {% comment %}
+              <a href="/cart/change?line={{ forloop.index }}&amp;quantity=0" class="cart__remove color--shop-accent">
+                <small>{{ 'cart.general.remove' | t }}</small>
+              </a>
+              {% endcomment %}
+              
+
+             
+              {% comment %}
+              <span class="feature-copy">
+                {%- if item.original_price != item.final_price -%}
+                  <del class="cart__price block">{{ item.original_price | money }}</del>
+                  <span class="order-discount cart__price color--shop-accent">{{ item.final_price | money }}</span>
+                {%- else -%}
+                  <span>{{ item.original_price | money }}</span>
+                {%- endif -%}
+              </span>
+              {% endcomment %}
+              
+              
+              <span class="ProductPrice t--meta" itemprop="price" content="{{ item.original_price | divided_by: 100.00 }}"  data-product-price>
+              {{ item.original_price | money }}
+              </span>
+              {% if item.product.compare_at_price_max > item.product.price %}
+                <s id="ComparePrice" class="ComparePrice f--main t--meta color--primary-faded" data-compare-price>{{ item.product.compare_at_price_max | money }}</s>
+                &nbsp;
+              {% endif %}
+              {% if item.product.compare_at_price_max > item.product.price %}
+              {% assign minPrice = item.product.price %}
+              {% assign RRP = item.product.compare_at_price_max %}
+              {% assign youSave = RRP | minus:minPrice %}
+              {% assign youSavePerc = youSave | times:100 | divided_by:RRP %}
+              <br><span class="sale savings">You Save {{ youSavePerc | round:1 }}% ( {{ youSave | money }} )</span>
+              {% endif %}
+
+
+              <input type="number" name="updates[]" id="updates_{{ item.id }}" value="{{ item.quantity }}" min="0">
+              
+              {% comment %}
+              <span class="feature-copy">
+
+                {%- if item.original_line_price != item.final_line_price -%}
+                  <del class="cart__price block">{{ item.original_line_price | money }}</del>
+                  <span class="order-discount cart__price color--shop-accent">{{ item.final_line_price | money }}</span>
+                {%- else -%}
+                  <span>{{ item.original_line_price | money }}</span>
+                {%- endif -%}
+
+              </span>
+              {% endcomment %}
+              </div>
+        	</div>
+        </div>
+        {% endfor %}
+      </div>
+      <div class="cart__row four-twelfths float-left">
+        {% if settings.cart_notes_enable %}
+        {% comment %}
+          <div class="grid__item two-thirds sm--one-whole">
+            <label for="CartSpecialInstructions">{{ 'cart.general.note' | t }}</label>
+            <textarea name="note" class="input-full" id="CartSpecialInstructions">{{ cart.note }}</textarea>
+          </div>
+        {% endcomment %}
+        
+        {% endif %}
+        <div class="text-right{% if settings.cart_notes_enable %} sm--mt3 one-third sm--one-whole{% endif %}">
+
+          {%- if cart.cart_level_discount_applications != blank -%}
+          <div class="grid--full cart__row--table">
+            <div class="cart__discounts">
+              {%- for discount_application in cart.cart_level_discount_applications -%}
+                <p class="color--shop-accent">
+                  <span class="visually-hidden">{{ 'customer.order.discount' | t }}:</span><span class="mr1">{{- discount_application.title -}}</span>
+                  <span class="order-discount order-discount--cart">-{{ discount_application.total_allocated_amount | money }}</span>
+                </p>
+              {%- endfor -%}
+            </div>
+          </div>
+          {%- endif -%}
+
+          <p>
+            <span class="cart__subtotal-title">{{ 'cart.general.subtotal' | t }}</span>
+            <span class="h3 cart__subtotal f--main">{{ cart.total_price | money }}</span>
+          </p>
+
+          {% comment %}
+          <p class="font-size--s">{{ 'cart.general.shipping_at_checkout' | t }}</p>
+          <button type="submit" name="update" class="btn bg--primary update-cart color--primary-overlay">{{ 'cart.general.update' | t }}</button>
+          {% endcomment %}
+          <button type="submit" name="checkout" class="btn bg--shop-accent color--shop-accent-overlay add_to_cart">{{ 'cart.general.checkout' | t }}</button>
+
+          <img class="payments_icons_d img-responsive" src="https://cdn.shopify.com/s/files/1/0067/1111/5864/files/payment-method_d.png?2919">
+          
+          {% unless shop.enabled_payment_types == empty %}
+            <ul class="inline-list payment-icons font-size--xl list-rest m0 payments_icons_m">
+              {% for type in shop.enabled_payment_types %}
+                <li class="inline-block">
+                  {{ type | payment_type_svg_tag: class:'payment-icon' }}
+                </li>
+              {% endfor %}
+            </ul>
+          {% endunless %}
+          {% comment %}
+          {% if additional_checkout_buttons %}
+            <div class="additional-checkout-buttons mt2">
+              {{ content_for_additional_checkout_buttons }}
+            </div>
+          {% endif %}
+		
+          {% endcomment %}
+            
+        <div class="tangohype-shopping"> <h3>Why Tangohype Shopping ?</h3> 
+          <ul class="icons-wrapper"> 
+            <li>
+              <img src="https://cdn.shopify.com/s/files/1/0067/1111/5864/files/happy.png?2230"> 
+              <span>100,000 happy clients</span>
+            </li> 
+            <li>
+              <img src="https://cdn.shopify.com/s/files/1/0067/1111/5864/files/point-left.png?2231"> 
+              <span>Hassle free refund policy</span>
+            </li> 
+            <li>
+              <img src="https://cdn.shopify.com/s/files/1/0067/1111/5864/files/upto-50.png?2237">
+              <span>Flash <br>sales every day</span>
+            </li> 
+            <li>
+              <img src="https://cdn.shopify.com/s/files/1/0067/1111/5864/files/hey.png?2233"> 
+              <span>24/7 customer support</span>
+            </li>
+          </ul>
+        </div>
+
+        </div>
+      </div>
+    </form>
+
+
+  </div>
+</section>
+{% else %}
+<section class="section bg--section m0 py3 f--main">
+  <div class="wrapper section--wrapper text-align--center   ">
+
+    <h1 class="t--section-title text-align--center f--main font-size--l lg--font-size--xl m0 py3">{{ 'cart.general.title' | t }}</h1>
+
+    <p>{{ 'cart.general.empty' | t }}</p>
+    <p>{{ 'cart.general.continue_browsing_html' | t }}</p>
+
+  </div>
+</section>
+{% endif %}

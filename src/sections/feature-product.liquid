@@ -1,0 +1,174 @@
+<!-- /snippets/store.liquid -->
+
+<section class="store section m0 py4 bg--section">
+  <div class="wrapper section--wrapper">
+
+    {% if section.settings.title != '' %}
+    <h2 class="t--section-title text-align--center f--main font-size--l lg--font-size--xl m0 mb3">{{ section.settings.title | escape }}</h2>
+    {% endif %}
+
+
+    {% assign product = all_products[section.settings.selected_product] %}
+    {% capture selectID %}select-{{ product.handle }}{% endcapture %}
+    {% capture sectionID %}section-{{ product.handle }}{% endcapture %}
+    {% capture single_product_id %}section-{{ section.id }}-{{ product.handle }}{% endcapture %}
+    {% assign current_variant = product.selected_or_first_available_variant %}
+    {% assign show_quantity = section.settings.show_quantity %}
+    {% assign in_list = true %}
+
+    {% if section.settings.show_description  %}
+      {% assign paragraphs = product.description | split: '<p>' %}
+      {% assign short_description = paragraphs[1] | replace: '</p>', '' %}
+    {% endif %}
+
+    {% if section.settings.rich_text != '' %}
+      {% assign short_description = section.settings.rich_text %}
+    {% endif %}
+
+    {% comment %}
+      Check if the product is on sale and set a variable to be used below.
+    {% endcomment %}
+    {% assign on_sale = false %}
+    {% if product.compare_at_price > product.price %}
+      {% assign on_sale = true %}
+    {% endif %}
+
+    {% if section.settings.product_image_size == 'large' %}
+      {% assign product_image_class = 'lg--one-half dt--seven-twelfths' %}
+      {% assign product_desc_class = 'lg--one-half dt--five-twelfths' %}
+    {% else %}
+      {% assign product_image_class = 'lg--one-half dt--one-half' %}
+      {% assign product_desc_class = 'lg--one-half dt--one-half' %}
+    {% endif %}
+
+    {% if section.settings.selected_product and section.settings.selected_product  != empty %}
+
+    <div itemscope itemtype="http://schema.org/Product" class="grid section-product single-product clearfix" id="{{ sectionID }}" data-section-id="{{ section.id }}" data-section-type="product" data-money-format="{{ shop.money_format }}" {{ block.shopify_attributes }}>
+
+      <div class="grid__item">
+        <div class="grid product-single">
+          <div class="grid__item {{ product_image_class }} text-center relative">
+            <div class="mb3 lg--mb0 product-single__imageHolder relative clearfix">
+              {% if on_sale %}
+                <div class="product__on-sale color--white bg--shop-accent f--main t--meta font-size--xs lg--font-size--s">{{ 'products.product.on_sale' | t }}</div>
+              {% endif %}
+
+              {%- assign current_variant = product.selected_or_first_available_variant -%}
+              {%- assign featured_img = current_variant.featured_image | default: product.featured_image -%}
+
+              {% unless featured_img == blank %}
+                {% capture img_id %}ProductImage-{{ featured_img.id }}{% endcapture %}
+                {% capture wrapper_id %}ProductImageWrapper-{{ featured_img.id }}{% endcapture %}
+                {%- assign img_url = featured_img | img_url: '1x1' | replace: '_1x1.', '_{width}x.' -%}
+                <div id="{{ wrapper_id }}" class="resp-img-wrapper js">
+                  <div style="padding-top:{{ 1 | divided_by: featured_img.aspect_ratio | times: 100}}%;">
+                    <img id="{{ img_id }}"
+                          class="resp-img product__img lazyload"
+                          data-src="{{ img_url }}"
+                          data-widths="[180, 360, 470, 600, 750, 940, 1080, 1296, 1512, 1728, 2048]"
+                          data-aspectratio="{{ featured_img.aspect_ratio }}"
+                          data-sizes="auto"
+                          alt="{{ featured_img.alt | escape }}">
+                  </div>
+                </div>
+                <noscript>
+                {% include 'hs-image-utils' with image: featured_img.src %}<img alt="{{ featured_img.alt | escape }}" class="product__img lazyload hs-id-b43e6912 hs-lazyload" data-aspectratio="{{ hs_aspect_ratio }}" data-parent-fit="contain" data-sizes="auto" data-src="{{ hs_data_src }}" data-widths="{{ hs_data_widths }}" src="{{ featured_img.src | img_url: 'large' }}" srcset="data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==" style=";max-width: 100%;min-width: 80%;"/>
+              </noscript>
+              {% endunless %}
+
+            </div>
+          </div><!-- end product images -->
+
+          <div class="grid__item {{ product_desc_class }} text-align--center pt2 lg--pt1 dt--pt4">
+
+            <div class="mx--auto lg--four-fifths dt--three-fifths">
+              {% include 'product-page-form' %}
+            </div>
+
+          </div><!-- end product form -->
+
+        </div><!-- end images and form grid -->
+
+
+        <script type="application/json" id="ProductJson-{{ section.id }}" data-product-json>
+          {{ product | json }}
+        </script>
+
+        <script type="application/json" id="FirstVariantJson-{{ section.id }}" data-first-variant-json>
+          {{ product.selected_or_first_available_variant | json }}
+        </script>
+
+      </div>
+
+    </div>
+    {% else %}
+      {% include 'onboarding_single-product' %}
+    {% endif %}
+
+  </div>
+</section>
+
+{% schema %}
+{
+  "name": "Feature product",
+  "class": "section-store",
+  "settings": [
+    {
+       "type":      "text",
+       "id":        "title",
+       "label":     "Heading"
+    },
+    {
+       "type": "product",
+       "id": "selected_product",
+       "label": "Choose product:"
+    },
+    {
+      "type": "checkbox",
+      "id": "show_payment_button",
+      "label": "Show dynamic checkout button",
+      "info": "Each customer will see their preferred payment method from those available on your store, such as PayPal or Apple Pay. [Learn more](https://help.shopify.com/manual/using-themes/change-the-layout/dynamic-checkout)",
+      "default": true
+    },
+    {
+      "type": "checkbox",
+      "id": "show_quantity",
+      "label": "Show quantity"
+    },
+    {
+      "type": "checkbox",
+      "id": "show_description",
+      "label": "Show description",
+      "info": "Show first paragraph of product description"
+    },
+    {
+       "type":      "richtext",
+       "id":        "rich_text",
+       "label":     "Short Description",
+       "info": "Optional: enter custom short description which will override product description."
+    },
+    {
+      "type": "select",
+      "id": "product_image_size",
+      "label": "Product image size - desktop",
+      "options": [
+        {
+          "value": "medium",
+          "label": "Medium"
+        },
+        {
+          "value": "large",
+          "label": "Large"
+        }
+      ],
+      "default": "large"
+    }
+  ],
+  "presets": [
+    {
+      "name": "Featured product",
+      "category": "Products"
+    }
+  ]
+}
+{% endschema %}

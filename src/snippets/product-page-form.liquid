@@ -1,0 +1,219 @@
+{% include 'global-variables' %}
+
+{% if ajax_product_id %}
+  {% assign ajax_id = ajax_product_id %}
+{% elsif product_id %}
+  {% assign ajax_id = product_id %}
+{% else %}
+  {% assign ajax_id = section.id %}
+{% endif %}
+
+
+<div class="product-page--form" itemprop="offers" itemscope itemtype="http://schema.org/Offer" data-product-form>
+
+  
+  <h1 class="product__title f--title">
+    {%- if in_list -%}
+    <a href="{{ product.url | within: collection }}">
+    {%- endif -%}
+    {{ product.title }}
+    {%- if in_list -%}
+    </a>
+    {%- endif -%}
+  </h1>
+  
+  <span class="shopify-product-reviews-badge" data-id="{{ product.id }}"></span>
+  
+  <span class="visually-hidden">{{ 'products.general.regular_price' | t }}</span>
+  {% if product.compare_at_price_max > product.price %}
+    <span class="visually-hidden">{{ 'products.general.sale_price' | t }}</span>
+  {% endif %}
+  <div class="h2 f--main caps regular font-size--ml" data-price-wrapper>
+    <span class="ProductPrice t--meta" itemprop="price" content="{{ current_variant.price | divided_by: 100.00 }}"  data-product-price>
+    {{ current_variant.price | money }}
+    </span>
+    {% if product.compare_at_price_max > product.price %}
+      <s id="ComparePrice" class="ComparePrice f--main t--meta color--primary-faded" data-compare-price>{{ current_variant.compare_at_price | money }}</s>
+      &nbsp;
+    {% endif %}
+    {% if product.compare_at_price_max > current_variant.price %}
+    {% assign minPrice = current_variant.price %}
+	{% assign RRP = product.compare_at_price_max %}
+	{% assign youSave = RRP | minus:minPrice %}
+	{% assign youSavePerc = youSave | times:100 | divided_by:RRP %}
+    <br><span class="sale savings" id="sale_saving">You Save {{ youSavePerc | round:1 }}% ( {{ youSave | money }} )
+    {% endif %}
+  </div>
+
+
+
+  {% if short_description %}
+    <div class="mt2">
+      {{ short_description }}
+    </div>
+  {% endif %}
+
+  {% comment %}<hr class="rule bg--shop-accent" />{% endcomment %}
+
+  <meta itemprop="priceCurrency" content="{{ shop.currency }}">
+
+  <link itemprop="availability" href="http://schema.org/{% if product.available %}InStock{% else %}OutOfStock{% endif %}">
+
+  {% comment %}
+    ID addToCartForm is a selector for the ajax cart plugin
+  {% endcomment %}
+  <div id="AddToCartForm--{{ ajax_id }}" class="form-vertical">
+    {% form 'product', product %}
+      {% comment %}
+        Add product variants as a dropdown.
+          - By default, each variant (or combination of variants) will display as its own <option>
+          - To separate these into multiple steps, which we suggest, use option_selection.js (see below)
+
+        You can leverage jQuery to add a callback on page load and each time the select element changes:
+          - Include option_selection.js (as seen at the bottom of this file)
+          - This allows you to use JavaScript anytime the variant dropdown changes
+          - This also separates out your variant options (ie. size, color, etc.) to separate select elements
+
+        For more information on products with multiple options, visit:
+          - http://docs.shopify.com/support/your-website/themes/can-i-make-my-theme-use-products-with-multiple-options#update-product-liquid
+      {% endcomment %}
+
+      {% comment %}
+      Product options from Debut
+      {% endcomment %}
+      {% unless product.options.size == 1 and product.variants[0].title == 'Default Title' %}
+          {% for option in product.options_with_values %}
+            <div class="selector-wrapper js product-form__item t--meta">
+              {% comment %}
+              {% unless section.settings.hide_drop_down_labels %}
+              <label {% if option.name == 'default' %}class="label--hidden" {% endif %}for="SingleOptionSelector-{{ forloop.index0 }}">
+                {{ option.name }}
+              </label>
+              {% endunless %}
+              {% endcomment %}
+              <select class="single-option-selector single-option-selector-{{ section.id }} product-form__input f--main t--meta" id="SingleOptionSelector-{{ forloop.index0 }}" data-index="option{{ forloop.index }}"  data-single-option-selector>
+                {% for value in option.values %}
+                  <option value="{{ value | escape }}"{% if option.selected_value == value %} selected="selected"{% endif %}>{{ value }}</option>
+                {% endfor %}
+              </select>
+            </div>
+          {% endfor %}
+    
+    	  {% if product.available and product.variants.size > 1 %}
+    		{% for option in product.options %}
+    		  {% if option == 'Color' %}
+           		{% include 'swatch' with 'Color' %}
+    		  {% endif %}
+    		{% endfor %}
+          {% endif %}
+    
+        {% endunless %}
+
+        <select name="id" id="ProductSelect" data-section="{{ section.id }}" class="product-form__variants no-js"  data-product-select>
+          {% for variant in product.variants %}
+            {% if variant.available %}
+              <option {% if variant == product.selected_or_first_available_variant %} selected="selected" {% endif %} value="{{ variant.id }}">
+                {{ variant.title }}
+              </option>
+            {% else %}
+              <option disabled="disabled">{{ variant.title }} - {{ 'products.product.sold_out' | t }}</option>
+            {% endif %}
+          {% endfor %}
+        </select>
+
+      {% comment %}
+      <label for="Quantity" class="quantity-selector">{{ 'products.product.quantity' | t }}</label>
+      {% endcomment %}
+      {% if show_quantity %}
+        {% if settings.ajax_cart_method == "drawer" %}
+          <input type="number" id="Quantity" name="quantity" value="1" min="1" class="quantity-selector mx--auto f--main t--meta">
+        {% else %}
+    	  <div class="purchase-details__quantity product-quantity-box"> 
+            <label for="quantity">Select Quantity</label> 
+            <span class="ss-icon product-minus js-change-quantity" data-func="minus">_</span> 
+            <input type="number" min="1" size="2" class="quantity" name="quantity" id="quantity" value="1"> 
+            <span class="ss-icon product-plus js-change-quantity" data-func="plus">+</span>
+            </span>
+    	  </div>
+    	{% comment %}
+          <div class="quantity--no-js relative clearfix">
+            <label for="Quantity" class="quantity-selector left f--main font-size--m">{{ 'products.product.quantity' | t }}</label>
+            <input type="number" id="Quantity" name="quantity" value="1" min="1" class="quantity-selector mx--auto f--main t--meta">
+          </div>
+    	{% endcomment %}
+        {% endif %}
+      {% endif %}
+
+      <div class="cta-content {% unless current_variant.available %}hide-pay-buttons{% endunless %}  {% if section.settings.show_payment_button %}cta-content--pay-buttons{% endif %}"  data-cta-content>
+
+        <button type="submit" name="add" id="AddToCart--{{ ajax_id }}" class="btn addToCart mt2 mx--auto {% if section.settings.show_payment_button %}{{ __primary_shop_button__ }}{% else %}{{ __shop_button__ }}{% endif %}" {% unless current_variant.available %}disabled="disabled"{% endunless %}  data-add-to-cart>
+
+          <span class="AddToCartText" data-add-to-cart-text>
+            {% if current_variant.available %}
+            {{ 'products.product.add_to_cart' | t }}
+            {% else %}
+              <span class="SoldOutText">{{ 'products.product.sold_out' | t }}
+            {% endif %}
+          </span>
+
+        </button>
+          <img class="payments_icons_d img-responsive" src="https://cdn.shopify.com/s/files/1/0067/1111/5864/files/payment-method_d.png?2919">
+        
+        {% if section.settings.show_payment_button %}
+          <div class="mt2">{{ form | payment_button }}</div>
+        {% endif %}
+          
+        {% unless shop.enabled_payment_types == empty %}
+            <ul class="inline-list payment-icons font-size--xl list-rest m0 payments_icons_m">
+              {% for type in shop.enabled_payment_types %}
+                <li class="inline-block">
+                  {{ type | payment_type_svg_tag: class:'payment-icon' }}
+                </li>
+              {% endfor %}
+            </ul>
+          {% endunless %}
+        
+
+      </div>
+
+    {% comment %}
+    </form>
+    {% endcomment %}
+    {% endform %}
+    
+    <h2 class="product_description_label">Product description</h2>
+    <div class="grid__item dt--eight-eighths product-description rte rte--shop {% if section.settings.large_first_paragraph %}rte--large-first-paragraph{% endif %} ">
+       {{ product.description  }}
+    </div>
+            
+	
+    <div id="shopify-product-reviews" data-id="{{product.id}}">{{ product.metafields.spr.reviews }}</div>
+  
+    <div class="product_icons_wrapper"> 
+      <a href="javascript:void(0);" class="scroll_to_top_icon"> </a> 
+      {% if section.settings.show_shipping_box %}
+      <div class="shipping_content"> 
+        <div>
+          <h6>Shipping</h6> 
+          <span>10-20 business days for US delivery</span>
+        </div> 
+        <img src="https://cdn.shopify.com/s/files/1/0067/1111/5864/files/shipping-icon.png?1005">
+      </div> 
+      {% endif %}
+      
+      {% if section.settings.show_return_box %}
+      <div class="return_content">
+        <div>
+          <img src="https://cdn.shopify.com/s/files/1/0067/1111/5864/files/60-days.png?1216"> 
+          <span>60-day <br> hassle free <br> refund policy</span>
+        </div> 
+        <div>
+          <img src="https://cdn.shopify.com/s/files/1/0067/1111/5864/files/no-return.png?1213"> 
+          <span>free <br> returns</span>
+        </div>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+
+</div>

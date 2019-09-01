@@ -1,0 +1,134 @@
+<!-- /snippets/product-grid-item.liquid -->
+{% comment %}
+
+  This snippet is used to showcase each product during the loop,
+  'for product in collection.products' in collection.liquid.
+
+  A liquid variable (grid_item_width) is set just before the this
+  snippet is included to change the size of the container.
+  Once the variable is set on a page, all future instances of this
+  snippet will use that width. Overwrite the variable to adjust this.
+
+  Example
+    - assign grid_item_width = 'large--one-quarter medium--one-half'
+
+{% endcomment %}
+
+{% comment %}
+  Set the default grid_item_width if no variable is set
+{% endcomment %}
+{% include 'global-variables' %}
+
+{% unless grid_item_width %}
+  {% assign grid_item_width = 'md-dn--one-half lg--one-quarter dt--one-quarter' %}
+{% endunless %}
+
+{% assign title_class = 'font-size--m md--font-size--ml' %}
+{% if large == true %}
+  {% assign title_class = 'font-size--ml lg--font-size--l dt--font-size--xl' %}
+{% endif %}
+
+{% assign price_class = 'font-size--s ' %}
+{% if large == true %}
+  {% assign price_class = 'font-size--s lg--font-size--sm' %}
+{% endif %}
+
+{% comment %}
+  Check if the product is on sale and set a variable to be used below.
+{% endcomment %}
+{% assign on_sale = false %}
+{% if product.compare_at_price > product.price %}
+  {% assign on_sale = true %}
+{% endif %}
+
+{% comment %}
+  Check if the product is sold out and set a variable to be used below.
+{% endcomment %}
+{% assign sold_out = true %}
+{% if product.available %}
+  {% assign sold_out = false %}
+{% endif %}
+
+<div class="grid__item {{ grid_item_width }} text-align--center product-grid-item">
+
+  {% comment %}
+    Link to your product with the 'within: collection' filter for the link to be aware of the collection.
+    This allows you to create collection-based navigation on the product page.
+
+    Results of using 'within: collection':
+    - Instead of a URL with /products/product-handle
+      you would get /collections/collection-handle/products/product-handle
+
+    For more info on navigation within a collection
+      - http://docs.shopify.com/support/your-store/collections/how-to-navigate-within-a-collection
+
+  {% endcomment %}
+  <a href="{{ product.url | within: collection }}" class="grid__image relative">
+    {% if on_sale %}
+      <div class="product__on-sale color--shop-accent-overlay bg--shop-accent f--main t--meta font-size--xs lg--font-size--s">{{ 'products.product.on_sale' | t }}</div>
+    {% endif %}
+    {% unless product.featured_image == blank %}
+      {% capture img_id %}ProductImage-{{ product.featured_image.id }}{% endcapture %}
+      {% capture wrapper_id %}ProductImageWrapper-{{ product.featured_image.id }}{% endcapture %}
+      {%- assign img_url = product.featured_image | img_url: '1x1' | replace: '_1x1.', '_{width}x.' -%}
+
+      <div id="{{ wrapper_id }}" class="resp-img-wrapper js">
+        <div style="padding-top:{{ 1 | divided_by: product.featured_image.aspect_ratio | times: 100}}%;">
+          <img id="{{ img_id }}"
+               class="resp-img product__img lazyload"
+               src="{{ product.featured_image | img_url: '100x' }}"
+               data-src="{{ img_url }}"
+               data-widths="[180, 360, 470, 600, 750, 940, 1080, 1296, 1512, 1728, 2048]"
+               data-aspectratio="{{ product.featured_image.aspect_ratio }}"
+               data-sizes="auto"
+               alt="{{ product.featured_image.alt | escape }}">
+        </div>
+      </div>
+    {% else %}
+      {% include 'hs-image-utils' with image: product.featured_image.src %}<img alt="{{ product.featured_image.alt | escape }}" class="product__img lazyload hs-lazyload hs-id-bf134496" data-aspectratio="{{ hs_aspect_ratio }}" data-parent-fit="contain" data-sizes="auto" data-src="{{ hs_data_src }}" data-widths="{{ hs_data_widths }}" src="{{ product.featured_image.src | img_url: 'large' }}" srcset="data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==" style=";max-width: 100%;min-width: 80%;"/>
+    {% endunless %}
+    <noscript>
+      {% include 'hs-image-utils' with image: product.featured_image.src %}<img alt="{{ product.featured_image.alt | escape }}" class="product__img lazyload hs-lazyload hs-id-bf134496" data-aspectratio="{{ hs_aspect_ratio }}" data-parent-fit="contain" data-sizes="auto" data-src="{{ hs_data_src }}" data-widths="{{ hs_data_widths }}" src="{{ product.featured_image.src | img_url: 'large' }}" srcset="data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==" style=";max-width: 100%;min-width: 80%;"/>
+    </noscript>
+  </a>
+
+  <p class="h6 {{ title_class }} f--title">
+    <a href="{{ product.url | within: collection }}">{{ product.title }}</a>
+  </p>
+  <p class="{{ __shop_secondary__ }} {{ price_class }} t--meta f--main m0">
+    {% comment %}
+      You can show a leading 'from' or 'up to' by checking 'product.price_varies'
+      if your variants have different prices.
+    {% endcomment %}
+
+      {% if on_sale %}
+        {% if product.price_varies %}
+          {% assign sale_price = product.price | money %}
+          {{ 'products.general.from_text_html' | t: price: sale_price }}
+        {% else %}
+          {% unless sold_out %}
+          {{ product.price | money }}
+          {% endunless %}
+        {% endif %}
+      {% else %}
+        {% if product.price_varies %}
+          {% assign price = product.price | money %}
+          {{ 'products.general.from_text_html' | t: price: price }}
+        {% else %}
+          {% unless sold_out %}
+          {{ product.price | money }}
+          {% endunless %}
+        {% endif %}
+      {% endif %}
+
+      {% if sold_out %}
+        <span class="sold-out color--primary">{{ 'products.product.sold_out' | t }}</span>
+      {% endif %}
+
+      {% if on_sale %}
+        <span class="visually-hidden mr1">{{ 'products.general.regular_price' | t }}</span>
+        <s class="color--primary ml1">{{ product.compare_at_price | money }}</s>
+      {% endif %}
+  </p>
+
+</div>

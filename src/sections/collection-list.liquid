@@ -1,0 +1,88 @@
+<!-- /snippets/store.liquid -->
+
+<section class="store section m0 py4 bg--section">
+  <div class="wrapper section--wrapper">
+
+    {% if section.settings.title != '' %}
+    <h2 class="t--section-title text-align--center f--main font-size--l lg--font-size--xl m0">{{ section.settings.title | escape }}</h2>
+    {% endif %}
+
+
+
+    {% assign block_count =  section.blocks.size | modulo:2 %}
+
+    <div class="grid  py2" {{ block.shopify_attributes }}>
+
+      {% for block in section.blocks %}
+        {% assign forloopfirst = forloop.first %}
+        {% if block.settings.collection and block.settings.collection != '' %}
+          {% assign grid_class = 'lg--one-half' %}
+          {% if forloopfirst and block_count != 0 %}
+            {% assign grid_class = 'lg--one-whole' %}
+          {% endif %}
+          {% assign extra_class = "mt3" %}
+          {% assign selected_collection = collections[block.settings.collection] %}
+          {% assign text_color = block.settings.text_color %}
+          {% include 'collection-list_item', collection: selected_collection, text_color: text_color %}
+        {% else %}
+          {% include 'collection-list_item--onboarding', text_color: text_color %}
+        {% endif %}
+      {% endfor %}
+
+    </div>
+
+  </div>
+</section>
+
+{% schema %}
+{
+  "name": "Collection list",
+  "class": "section-store",
+  "settings": [
+    {
+       "type":      "text",
+       "id":        "title",
+       "label":     "Heading"
+    }
+  ],
+
+  "blocks" :  [
+    {
+      "type": "collection",
+      "name": "Collection",
+      "settings": [
+        {
+           "type": "collection",
+           "id": "collection",
+           "label": "Choose collection:"
+        },
+        {
+           "type": "select",
+           "id": "text_color",
+           "options": [
+              { "value": "primary", "label": "Primary"},
+              { "value": "shop-accent ", "label": "Shop Accent"},
+              { "value": "white ", "label": "White"},
+              { "value": "black", "label": "Black"}
+           ],
+           "label": "Text color"
+        }
+      ]
+    }
+  ],
+  "presets": [
+    {
+      "name": "Collection list",
+      "category": "Collection",
+      "blocks": [
+        {
+          "type": "collection"
+        },
+        {
+          "type": "collection"
+        }
+      ]
+    }
+  ]
+}
+{% endschema %}
