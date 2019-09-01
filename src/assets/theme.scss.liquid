@@ -5806,6 +5806,16 @@ a, a:visited, a span {
     max-width: 100%;
     margin: 0 auto 20px;
     justify-content: space-between;
+    @media(max-width: 500px) {
+      padding-right: 0;
+      align-items: baseline;
+      padding: 10px 20px;
+      div {
+        flex-flow: column;
+        width: 100%;
+        text-align: center;
+      }
+    }
 }
 #shopify-section-product-template .return_content div {
     display: flex;
@@ -5817,6 +5827,11 @@ a, a:visited, a span {
 #shopify-section-product-template .return_content div span {
     font-size: 18px;
     line-height: 22px;
+
+    @media (max-width: 319px) {
+      font-size: 11px;
+      line-height: 1.2;
+    }
 }
 #shopify-section-product-template .product_description_label {
     font-size: 24px;

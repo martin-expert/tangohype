@@ -570,9 +570,14 @@ var ajaxCart = (function(module, $) {
           qty += 1;
         } else {
           qty -= 1;
-          if (qty <= 1) qty = 1;
+          if (qty <= 1) {
+            if (!$(this).closest('form').hasClass('cart')) {
+              qty = 1;
+            } else {
+              qty = 0;
+            }
+          } 
         }
-        
 
         // Update the input's number
         $qtySelector.val(qty);
